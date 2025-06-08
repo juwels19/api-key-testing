@@ -1,103 +1,193 @@
-import Image from "next/image";
+"use client";
+
+import axios from "axios";
+import { CheckIcon, CopyIcon, Loader2Icon } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+import { cn } from "~/lib/utils";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const dialogInputRef = useRef(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const [isCreating, setIsCreating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [enteredKey, setEnteredKey] = useState("");
+  const [createdKey, setCreatedKey] = useState();
+
+  const onGenerateClick = async () => {
+    setIsCreating(true);
+
+    try {
+      const keyResult = await fetch("/api/keys/create", { method: "post" });
+      const key = await keyResult.json();
+      setCreatedKey(key.key);
+    } catch (e) {
+      console.log(e);
+    }
+
+    setIsCreating(false);
+  };
+
+  const onValidateClick = async () => {
+    setIsValidating(true);
+
+    try {
+      const verifyResult = await axios.post("/api/keys/verify", {
+        apiKey: enteredKey,
+      });
+      if (verifyResult.status !== 200) {
+        toast.error("Your API key is invalid");
+      } else {
+        toast.success("Your API key is valid!");
+      }
+    } catch {
+      toast.error("Something went wrong!");
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (dialogInputRef.current) {
+      navigator.clipboard.writeText(dialogInputRef.current.value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen p-8 pb-20 gap-8 font-[family-name:var(--font-geist-sans)]">
+      <h1 className="font-bold text-2xl">API Key Testing App</h1>
+      <Card className="w-3/4 self-center">
+        <CardHeader>
+          <CardTitle>Generate API Key</CardTitle>
+          <CardDescription>
+            Click the button below to generate an API key
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button disabled={isCreating} onClick={onGenerateClick}>
+            {isCreating && <Loader2Icon className="size-4 animate-spin" />}
+            Generate key
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="w-3/4 self-center">
+        <CardHeader>
+          <CardTitle>Validate API Key</CardTitle>
+          <CardDescription>
+            Enter an API key and click validate to see if your API key is valid
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Input
+            placeholder="Enter API key..."
+            type="text"
+            className="text-sm"
+            onChange={(e) => setEnteredKey(e.target.value)}
+          />
+          <Button
+            disabled={isValidating}
+            onClick={onValidateClick}
+            className="max-w-fit"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            {isValidating && <Loader2Icon className="size-4 animate-spin" />}
+            Validate key
+          </Button>
+        </CardContent>
+      </Card>
+      <Dialog open={createdKey}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>API key successfully created!</DialogTitle>
+            <DialogDescription>
+              Please save this key somewhere safe and accessible. This will be
+              the <span className="font-semibold italic">only time</span> it is
+              visible. If you lose this key, you will need to generate a new
+              one.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <div className="relative">
+              <Input
+                readOnly
+                defaultValue={createdKey}
+                type="text"
+                ref={dialogInputRef}
+              />
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleCopy}
+                      className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed"
+                      aria-label={copied ? "Copied" : "Copy to clipboard"}
+                      disabled={copied}
+                    >
+                      <div
+                        className={cn(
+                          "transition-all",
+                          copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                        )}
+                      >
+                        <CheckIcon
+                          className="stroke-emerald-500"
+                          size={16}
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div
+                        className={cn(
+                          "absolute transition-all",
+                          copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+                        )}
+                      >
+                        <CopyIcon size={16} aria-hidden="true" />
+                      </div>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="px-2 py-1 text-xs">
+                    Copy to clipboard
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setCreatedKey(undefined)}
+              className="cursor-pointer"
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
