@@ -73,7 +73,7 @@ export default function Home() {
 
   const handleCopy = () => {
     if (dialogInputRef.current) {
-      navigator.clipboard.writeText(dialogInputRef.current.value);
+      navigator.clipboard.writeText(createdKey!);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }
